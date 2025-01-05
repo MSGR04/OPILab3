@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+<ui:composition template="resources/templates/index.xhtml">
+    <ui:define name="content">
+        <h2>Главная страница</h2>
+
+        <h:panelGroup id="graph" layout="block" class="graph-container">
+            <canvas id="graphCanvas"></canvas>
+        </h:panelGroup>
+
+        <h:form id="mainForm">
+            <div class="form-group">
+                <label for="x">Выберите X:</label>
+                <p:selectOneMenu id="x" value="#{pointBean.x}" styleClass="form-control">
+                    <f:selectItem itemLabel="-5" itemValue="-5" />
+                    <f:selectItem itemLabel="-4" itemValue="-4" />
+                    <f:selectItem itemLabel="-3" itemValue="-3" />
+                    <f:selectItem itemLabel="-2" itemValue="-2" />
+                    <f:selectItem itemLabel="-1" itemValue="-1" />
+                    <f:selectItem itemLabel="0" itemValue="0" />
+                    <f:selectItem itemLabel="1" itemValue="1" />
+                </p:selectOneMenu>
+            </div>
+
+            <div class="form-group">
+                <label for="y">Выберите Y:</label>
+                <p:inputNumber id="y" value="#{pointBean.y}" placeholder="Выберите значение Y" maxValue="5" minValue="-5" />
+                <h:message for="y" class="error" />
+            </div>
+
+            <div class="form-group">
+                <label for="radius">Радиус R:</label>
+                <p:spinner id="radius" value="#{pointBean.radius}" min="1" max="5" stepFactor="1" widgetVar="radiusSpinner" onchange="onRadiusChange();" />
+            </div>
+
+            <div class="form-group">
+                <p:commandButton value="Проверить" styleClass="submit-button" action="#{pointBean.checkHit}" update=":mainForm:resultsTable" oncomplete="drawGraph(); drawPreviousPoints();" />
+            </div>
+
+            <p:dataTable id="resultsTable" value="#{resultTableBean.results}" var="result">
+                <p:column headerText="X">
+                    #{result.point.x}
+                </p:column>
+                <p:column headerText="Y">
+                    #{result.point.y}
+                </p:column>
+                <p:column headerText="R">
+                    #{result.point.r}
+                </p:column>
+                <p:column headerText="Попал?">
+                    #{result.isHit ? 'Да' : 'Нет'}
+                </p:column>
+                <p:column headerText="Время запроса">
+                    <h:outputText value="#{result.timestamp * 1000}">
+                        <f:convertDateTime pattern="yyyy-MM-dd HH:mm:ss" />
+                    </h:outputText>
+                </p:column>
+            </p:dataTable>
+        </h:form>
+
+        <div class="form-group">
+            <h:button value="Вернуться на начальную страницу" outcome="start" styleClass="submit-button" />
+        </div>
+
+        <p:remoteCommand name="checkPoint" action="#{pointBean.checkHit}" update=":mainForm:resultsTable" oncomplete="drawGraph(); drawPreviousPoints();">
+            <f:setPropertyActionListener target="#{pointBean.x}" value="#{param.x}" />
+            <f:setPropertyActionListener target="#{pointBean.y}" value="#{param.y}" />
+            <f:setPropertyActionListener target="#{pointBean.radius}" value="#{param.r}" />
+        </p:remoteCommand>
+    </ui:define>
+</ui:composition>
+</html>
