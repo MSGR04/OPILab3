@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="WebLab3" default="build" basedir=".">
+    <!-- 1. подтягиваем все переменные -->
+    <property file="build.properties"/>
+
+    <!-- 2. classpath -->
+    <path id="classpath">
+        <fileset dir="${lib.dir}">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+
+
+    <!-- compile: только компиляция -->
+    <target name="compile" description="Compile project sources">
+        <mkdir  dir="${classes.dir}"/>
+        <javac  srcdir="${src.dir}"
+                destdir="${classes.dir}"
+                includeantruntime="false"
+                source="${java.source}"
+                target="${java.target}"
+                encoding="${src.encoding}">
+            <classpath refid="classpath"/>
+        </javac>
+        <!-- копируем ресурсы -->
+        <copy todir="${classes.dir}">
+            <fileset dir="${resources.dir}"/>
+        </copy>
+    </target>
+
+    <!-- build: jar + manifest -->
+    <target name="build" depends="compile" description="Compile and pack to executable JAR">
+        <!-- гарантируем dist -->
+        <mkdir dir="${dist.dir}"/>
+
+        <!-- генерируем manifest с нужной версией -->
+        <manifest file="${manifest.file}">
+            <attribute name="Implementation-Version" value="${version}"/>
+            <attribute name="Main-Class"           value="${main.class}"/>
+        </manifest>
+
+        <!-- создаём JAR -->
+        <jar destfile="${dist.dir}/${jar.name}"
+             manifest="${manifest.file}">
+            <fileset dir="${classes.dir}"/>
+        </jar>
+    </target>
+
+    <!-- native2ascii: конвертим локализованные ресурсы -->
+    <target name="native2ascii" description="Convert UTF-8 locale files to ASCII Unicode escapes">
+        <!-- Старт -->
+        <echo message="***** NATIVE2ASCII STARTED *****"/>
+
+        <!-- Удаляем старые сконвертированные ресурсы -->
+        <delete dir="${locale.ascii}"/>
+
+        <!-- Создаём папку-назначение заново -->
+        <mkdir dir="${locale.ascii}"/>
+
+        <!-- Конвертируем все .properties из src/locales_native → src/main/resources -->
+        <native2ascii
+                src="${locale.native}"
+                dest="${locale.ascii}"
+                encoding="${native.encoding}"
+                includes="**/*.properties"/>
+
+        <!-- Финиш -->
+        <echo message="***** NATIVE2ASCII COMPLETED *****"/>
+    </target>
+
+
+
+
+    <!-- test: собираем и запускаем JUnit -->
+    <target name="test" depends="build">
+        <echo message="***** COMPILE TESTS *****"/>
+        <mkdir dir="${test.classes.dir}"/>
+        <javac srcdir="${test.src.dir}" destdir="${test.classes.dir}" includeantruntime="false" encoding="UTF-8"
+               source="${maven.compiler.source}" target="${maven.compiler.target}">
+            <classpath>
+                <pathelement path="${classes.dir}"/>
+                <path refid="classpath"/>
+            </classpath>
+        </javac>
+
+        <echo message="***** RUN TESTS *****"/>
+        <mkdir dir="${report.dir}"/>
+        <java fork="true" failonerror="true" classname="org.junit.platform.console.ConsoleLauncher">
+            <classpath>
+                <pathelement path="${classes.dir}"/>
+                <pathelement path="${test.classes.dir}"/>
+                <fileset dir="${lib.dir}" includes="**/*.jar"/>
+            </classpath>
+            <arg value="--scan-classpath"/>
+            <arg value="--reports-dir=${report.dir}"/>
+        </java>
+    </target>
+
+
+    <!-- clean: снести все результаты сборки -->
+    <target name="clean" description="Remove build artifacts">
+        <delete dir="${build.dir}"/>
+    </target>
+
+    <!-- env: сборка + запуск под альтернативной JVM и с гигантским набором JVM‑аргументов -->
+    <target name="env" description="Build and run in alternative environment">
+        <antcall target="build"/>
+        <echo>Launching ${jar.name} with ${env.java.home}/bin/java ${env.jvm.args}</echo>
+        <java jar="${dist.dir}/${jar.name}"
+              fork="true"
+              jvm="${env.java.home}/bin/java"
+              failonerror="true">
+            <jvmarg line="${env.jvm.args}"/>
+        </java>
+    </target>
+</project>
