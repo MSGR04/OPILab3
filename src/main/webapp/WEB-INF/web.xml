@@ -21,6 +21,11 @@
         <url-pattern>*.xhtml</url-pattern>
     </servlet-mapping>
 
+    <listener>
+        <listener-class>org.web.lab3.monitor.JmxInitializer</listener-class>
+    </listener>
+
+
     <!-- Указание конфигурации JSF -->
     <context-param>
         <param-name>jakarta.faces.CONFIG_FILES</param-name>
